@@ -31,7 +31,6 @@ class BufferReader:
             maxlen -= len(found)
         # If that is not enough, use the source
         if maxlen >= 0:
-            newdatapos = self.source.tell()
             newdata = self.source.read(maxlen)
             found += newdata
         return found

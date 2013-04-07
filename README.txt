@@ -1,10 +1,16 @@
 To use the evaluator, type this:
 
-python3 cc.py < input.cc
+	python3 cc.py input.cc
 
 The program will load the continuation calculus definitions in input.cc, and execute the terms.
 
-Terms and definitions must be on single lines, with no surrounding whitespace. A hash symbol starts a comment line.
+You can also enter interactive mode:
+
+    python3 cc.py
+
+Now you can enter definitions and terms. Definitions will be remembered, terms will be evaluated to a final term.
+
+For the syntax of terms and rules, look in fib.cc en listmult.cc. Terms and definitions must be on single lines, with no surrounding whitespace. A hash symbol starts a comment line.
 
 Options:
 

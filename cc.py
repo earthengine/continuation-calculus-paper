@@ -12,7 +12,32 @@ def printerr(*args, **kw):
 
 def usage():
     printerr("Usage:")
-    printerr("    python3 cc.py [-printnum|-printlatex|-printlyx]")
+    printerr("    python3 cc.py [-printnum|-printlatex|-printlyx] [input.cc]")
+    printerr("Options:")
+    printerr("")
+    printerr("  [no option]   Produce human-readable output.")
+    printerr("")
+    printerr("  -printnum:    Produce human-readable output, but replace (S.(S.(S.Zero))) by")
+    printerr("                3 in the output. Warning: you must still enter S.(S.(S.Zero))")
+    printerr("                in the input!")
+    printerr("")
+    printerr("  -printlatex   Produce output suitable for inclusion in a LaTeX file")
+    printerr("")
+    printerr("  -printlyx     Produce output suitable for inclusion in a LyX file")
+
+def usagefail():
+    usage()
+    exit(1)
+
+class ReductionFail(Exception):
+    __slots__ = ['message']
+
+    def __init__(self, message):
+        assert(isinstance(message,str))
+        self.message = message
+
+    def __str__(self):
+        return self.message
 
 # defaults to be overridden in main()
 _PRINTNUM = False # convert (S.(S.Zero)) to 2?
@@ -23,28 +48,36 @@ _PRINTVERBOSE = True # = not printlatexy
 
 def main():
     global _PRINTLATEX, _PRINTLYX, _PRINTNUM, _PRINTLATEXY, _PRINTVERBOSE
-    if (len(sys.argv) > 1
-           and sys.argv[1] == '-printlatex'
-           and not _PRINTLATEX):
-        del sys.argv[1]
-        assert not _PRINTLYX
-        _PRINTLATEX = True
-        _PRINTNUM = True
-    if (len(sys.argv) > 1
-           and sys.argv[1] == '-printlyx'
-           and not _PRINTLYX):
-        del sys.argv[1]
-        assert not _PRINTLATEX
-        _PRINTLYX = True
-        _PRINTNUM = True
-    if (len(sys.argv) > 1
-           and sys.argv[1] == '-printnum'
-           and not _PRINTNUM):
-        del sys.argv[1]
-        _PRINTNUM = True
-    if len(sys.argv) != 1:
-        usage()
-        sys.exit(1)
+
+    override_stdin = False
+
+    for arg in sys.argv[1:]:
+        if arg == '-printlatex' and not _PRINTLATEX:
+            assert not _PRINTLYX
+            _PRINTLATEX = True
+            _PRINTNUM = True
+        elif arg == '-printlyx' and not _PRINTLYX:
+            assert not _PRINTLATEX
+            _PRINTLYX = True
+            _PRINTNUM = True
+        elif arg == '-printnum' and not _PRINTNUM:
+            _PRINTNUM = True
+        elif os.access(arg, os.F_OK):
+            # Input file
+            if override_stdin:
+                printerr("You seem to want to load two files, which I can not.")
+                printerr()
+                usagefail()
+
+            sys.stdin = open(arg)
+        elif '.cc' in arg:
+            printerr("You seem to want to load file {}, but it does not exist.".format(arg))
+            printerr()
+            usagefail()
+        else:
+            printerr("I do not understand this argument: " + repr(arg))
+            printerr()
+            usagefail()
 
     _PRINTLATEXY = _PRINTLATEX or _PRINTLYX
     _PRINTVERBOSE = not _PRINTLATEXY
@@ -53,6 +86,7 @@ def main():
 
     if verbose:
         printerr("cc.py started. Please input definitions and terms, and end them with enter.")
+        printerr()
 
     try:
         line = ''
@@ -70,6 +104,8 @@ def main():
             try:
                 thing = readtermorrule(file)
             except EOFError:
+                printerr("Premature end of line?")
+                line = None
                 continue
             leftover = file.unreadbuf + file.source.read()
             if leftover.startswith(r'\\'):
@@ -132,6 +168,15 @@ def readterm(f, onlyname=False):
 
 def readtermorrule(f):
     f.skiplinespace()
+
+    # We have three syntaxes for rules:
+    #
+    # 1. \d{LHS}{RHS}
+    # 2. LHS → RHS (Unicode arrow)
+    # 3. LHS -> RHS
+    #
+    # If the line is a sole term, then we return the representation of that
+    # term.
 
     if f.peekornone(3) == r"\d{":
         f.read(3)
@@ -235,10 +280,14 @@ def dostuffwith(thing, verbose):
               end=('\n' if not _PRINTLYX else ''))
         while headof(term) in _defs:
             # Rewrite this term
-            term = rewrite(term, _defs[headof(term)])
-            print(("-> {}" if not _PRINTLATEXY else r"\rightarrow & \mathit{{{}}}\\")
-                  .format(format_termorrule(term)),
-                  end=('\n' if not _PRINTLYX else ''))
+            try:
+                term = rewrite(term, _defs[headof(term)])
+                print(("-> {}" if not _PRINTLATEXY else r"\rightarrow & \mathit{{{}}}\\")
+                      .format(format_termorrule(term)),
+                      end=('\n' if not _PRINTLYX else ''))
+            except ReductionFail as e:
+                printerr("Reduction failed to continue: {}".format(e))
+                return
         if _PRINTLYX: print("(end)")
         printerr("Reduction complete." if not _PRINTLATEX else "\\\\")
 
@@ -258,6 +307,7 @@ def rewrite(term, rule):
     RULE, lhs, rhs = rule
     assert RULE == 'RULE'
     del RULE
+    term = listify(term)
     assert headof(term) == headof(lhs)
 
     # Strip off the head.
@@ -265,6 +315,12 @@ def rewrite(term, rule):
     lhs = lhs[1:]
 
     # Look up the variables.
+    arity = len(lhs)
+    length = len(term)
+    if length < arity:
+        raise ReductionFail("incomplete term ({}<{})".format(length, arity))
+    if length > arity:
+        raise ReductionFail("invalid term ({}>{})".format(length, arity))
     assert len(term) == len(lhs)
     vars = dict(zip(lhs, term))
 
