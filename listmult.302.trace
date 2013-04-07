@@ -1,0 +1,11 @@
+ListMult.(Cons.3.(Cons.0.(Cons.2.Nil))).fr
+-> A.(Cons.3.(Cons.0.(Cons.2.Nil))).fr.(fr.0)
+-> Cons.3.(Cons.0.(Cons.2.Nil)).(fr.1).(B.fr.(fr.0))
+-> B.fr.(fr.0).3.(Cons.0.(Cons.2.Nil))
+-> S.2.(fr.0).(C.fr.(fr.0).3.(Cons.0.(Cons.2.Nil)))
+-> C.fr.(fr.0).3.(Cons.0.(Cons.2.Nil)).2
+-> A.(Cons.0.(Cons.2.Nil)).(PostMult.3.fr).(fr.0)
+-> Cons.0.(Cons.2.Nil).(PostMult.3.fr.1).(B.(PostMult.3.fr).(fr.0))
+-> B.(PostMult.3.fr).(fr.0).0.(Cons.2.Nil)
+-> 0.(fr.0).(C.(PostMult.3.fr).(fr.0).0.(Cons.2.Nil))
+-> fr.0

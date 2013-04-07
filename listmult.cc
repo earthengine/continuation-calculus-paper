@@ -30,5 +30,5 @@ Cons.n.l.ifempty.iflist → iflist.n.l
 # The trace of these terms will be printed. Term fr corresponds to the diamond
 # symbol in the paper.
 
-ListMult.(Cons.(S.(S.(S.Zero))).(Cons.(S.Zero).(Cons.(S.(S.Zero)).Nil))).fr
-# ListMult.(Cons.(S.(S.(S.Zero))).(Cons.Zero.(Cons.(S.(S.Zero)).Nil))).fr
+ListMult.(Cons.(S.(S.(S.Zero))).(Cons.Zero.(Cons.(S.(S.Zero)).Nil))).fr
+# ListMult.(Cons.(S.(S.(S.Zero))).(Cons.(S.Zero).(Cons.(S.(S.Zero)).Nil))).fr
