@@ -4,26 +4,40 @@ import sys, buffer, io, os
 
 _defs = dict() # stores rules
 
-if False: print("Sorry, you must run cc.py using Python 3.", file=None)
+# Some methods to make everything Python 2 compatible.
 
-def printerr(*args, **kw):
+if 'xrange' in dir(__builtins__):
+    range = xrange
+    def tounicode(b):
+        return b.decode("utf-8")
+    str = unicode
+else:
+    def tounicode(s):
+        return s
+    unichr = chr
+
+def printstdout(s, end="\n"):
+    "Print to standard output."
+    return sys.stdout.write(s + end)
+
+def printstderr(s, end="\n"):
     "Print to standard error."
-    return print(*args, file=sys.stderr, **kw)
+    return sys.stderr.write(s + end)
 
 def usage():
-    printerr("Usage:")
-    printerr("    python3 cc.py [-printnum|-printlatex|-printlyx] [input.cc]")
-    printerr("Options:")
-    printerr("")
-    printerr("  [no option]   Produce human-readable output.")
-    printerr("")
-    printerr("  -printnum:    Produce human-readable output, but replace (S.(S.(S.Zero))) by")
-    printerr("                3 in the output. Warning: you must still enter S.(S.(S.Zero))")
-    printerr("                in the input!")
-    printerr("")
-    printerr("  -printlatex   Produce output suitable for inclusion in a LaTeX file")
-    printerr("")
-    printerr("  -printlyx     Produce output suitable for inclusion in a LyX file")
+    printstderr("Usage:")
+    printstderr("    python cc.py [-printnum|-printlatex|-printlyx] [input.cc]")
+    printstderr("Options:")
+    printstderr("")
+    printstderr("  [no option]   Produce human-readable output.")
+    printstderr("")
+    printstderr("  -printnum:    Produce human-readable output, but replace (S.(S.(S.Zero))) by")
+    printstderr("                3 in the output. Warning: you must still enter S.(S.(S.Zero))")
+    printstderr("                in the input!")
+    printstderr("")
+    printstderr("  -printlatex   Produce output suitable for inclusion in a LaTeX file")
+    printstderr("")
+    printstderr("  -printlyx     Produce output suitable for inclusion in a LyX file")
 
 def usagefail():
     usage()
@@ -65,18 +79,18 @@ def main():
         elif os.access(arg, os.F_OK):
             # Input file
             if override_stdin:
-                printerr("You seem to want to load two files, which I can not.")
-                printerr()
+                printstderr("You seem to want to load two files, which I can not.")
+                printstderr()
                 usagefail()
 
             sys.stdin = open(arg)
         elif '.cc' in arg:
-            printerr("You seem to want to load file {}, but it does not exist.".format(arg))
-            printerr()
+            printstderr("You seem to want to load file {}, but it does not exist.".format(arg))
+            printstderr()
             usagefail()
         else:
-            printerr("I do not understand this argument: " + repr(arg))
-            printerr()
+            printstderr("I do not understand this argument: " + repr(arg))
+            printstderr()
             usagefail()
 
     _PRINTLATEXY = _PRINTLATEX or _PRINTLYX
@@ -85,9 +99,12 @@ def main():
     verbose = sys.stdin.isatty()
 
     if verbose:
-        printerr("cc.py started. Please input definitions and terms, and end them with enter.")
-        printerr()
+        printstderr("cc.py started. Please input definitions and terms, and end them with enter.")
+        printstderr()
 
+    runfile(verbose=verbose, printout=printstdout, printerr=printstderr)
+
+def runfile(verbose, printout, printerr):
     try:
         line = ''
         while True:
@@ -97,10 +114,10 @@ def main():
                 if not line:
                     raise EOFError
                 line = line.strip()
-            if line.startswith("#"):
+            if line.startswith("#") or line == "":
                 line = None
                 continue
-            file = buffer.BufferReader(io.StringIO(line))
+            file = buffer.BufferReader(io.StringIO(tounicode(line)))
             try:
                 thing = readtermorrule(file)
             except EOFError:
@@ -117,7 +134,7 @@ def main():
                 continue
             else:
                 line = ''
-            dostuffwith(thing, verbose)
+            dostuffwith(thing, verbose, printout, printerr)
     except EOFError:
         # import traceback
         # traceback.print_exc()
@@ -172,7 +189,7 @@ def readtermorrule(f):
     # We have three syntaxes for rules:
     #
     # 1. \d{LHS}{RHS}
-    # 2. LHS → RHS (Unicode arrow)
+    # 2. LHS \u2192 RHS (Unicode arrow)
     # 3. LHS -> RHS
     #
     # If the line is a sole term, then we return the representation of that
@@ -196,7 +213,7 @@ def readtermorrule(f):
     else:
         term = readterm(f)
         f.skiplinespace()
-        if f.peekornone(1) == '→':
+        if f.peekornone(1) == unichr(0x2192):
             # Shorthand for ->
             f.read(1)
             f.unread("->")
@@ -263,7 +280,7 @@ def headof(thing):
     else:
         return thing[0]
 
-def dostuffwith(thing, verbose):
+def dostuffwith(thing, verbose, printout, printerr):
     """Given a rule, install or overwrite it. Given a term, reduce it as far as possible."""
     if isrule(thing):
         if headof(thing[1]) not in _defs:
@@ -275,20 +292,20 @@ def dostuffwith(thing, verbose):
         _defs[headof(thing[1])] = thing
     else:
         term = thing
-        print(("{}" if not _PRINTLATEXY else r" & \mathit{{{}}}\\")
+        printout(("{}" if not _PRINTLATEXY else r" & \mathit{{{}}}\\")
               .format(format_termorrule(term)),
               end=('\n' if not _PRINTLYX else ''))
         while headof(term) in _defs:
             # Rewrite this term
             try:
                 term = rewrite(term, _defs[headof(term)])
-                print(("-> {}" if not _PRINTLATEXY else r"\rightarrow & \mathit{{{}}}\\")
+                printout(("-> {}" if not _PRINTLATEXY else r"\rightarrow & \mathit{{{}}}\\")
                       .format(format_termorrule(term)),
                       end=('\n' if not _PRINTLYX else ''))
             except ReductionFail as e:
                 printerr("Reduction failed to continue: {}".format(e))
                 return
-        if _PRINTLYX: print("(end)")
+        if _PRINTLYX: printout("(end)")
         printerr("Reduction complete." if not _PRINTLATEX else "\\\\")
 
 def listify(thing):
