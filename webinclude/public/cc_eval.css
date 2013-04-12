@@ -1,0 +1,24 @@
+/*.teststyle {
+  font-size: 200%;
+  margin: 20px;
+  padding: 20px;
+  background-color: #00ff00;
+}
+*/
+
+#loading-notify {
+    color: gray;
+}
+
+#input > textarea {
+    margin-top: 1em;
+}
+
+#output {
+    margin-top: 2.5em;
+}
+
+#output > .meta {
+    color: gray;
+    font-style: italic;
+}

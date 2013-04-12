@@ -1,4 +1,12 @@
-class BufferReader:
+import io
+
+if 'EOFError' in dir(io):
+    # PyJS
+    from io import EOFError
+    def tounicode(s):
+        return s
+
+class BufferReader(object):
 
     """A strange file-like object, but you can peek from and unread to it. The
     data must come from a file object.
@@ -44,14 +52,15 @@ class BufferReader:
         imaginary stream."""
         string = self.read(length)
         self.unread(string)
-        if len(string) != length: raise EOFError
+        if len(string) != length: raise EOFError()
         return string
 
     def peekornone(self, length=1):
         """Same as peek, but don't raise an exception on EOF. Return None
         instead."""
         try:
-            return self.peek(length)
+            peeked = self.peek(length)
+            return peeked
         except EOFError:
             return None
 

@@ -6,21 +6,30 @@ _defs = dict() # stores rules
 
 # Some methods to make everything Python 2 compatible.
 
-if 'xrange' in dir(__builtins__):
+if isinstance(range(0), list):
+    # Python 2
     range = xrange
     def tounicode(b):
         return b.decode("utf-8")
-    str = unicode
+    if 'EOFError' in dir(io):
+        # PyJS
+        from io import EOFError
+        def tounicode(s):
+            return s
+        unichr = chr
+    else:
+        str = unicode
 else:
+    # Python 3
     def tounicode(s):
         return s
     unichr = chr
 
-def printstdout(s, end="\n"):
+def printstdout(s="", end="\n"):
     "Print to standard output."
     return sys.stdout.write(s + end)
 
-def printstderr(s, end="\n"):
+def printstderr(s="", end="\n"):
     "Print to standard error."
     return sys.stderr.write(s + end)
 
@@ -47,7 +56,7 @@ class ReductionFail(Exception):
     __slots__ = ['message']
 
     def __init__(self, message):
-        assert isinstance(message,str)
+        # assert isinstance(message,str)
         self.message = message
 
     def __str__(self):
@@ -102,17 +111,18 @@ def main():
         printstderr("cc.py started. Please input definitions and terms, and end them with enter.")
         printstderr()
 
-    runfile(verbose=verbose, printout=printstdout, printerr=printstderr)
+    runfile(inputfile=sys.stdin, verbose=verbose,
+            printout=printstdout, printerr=printstderr)
 
-def runfile(verbose, printout, printerr):
+def runfile(inputfile, verbose, printout, printerr):
     try:
         line = ''
         while True:
             if not line:
                 # Read a new line
-                line = sys.stdin.readline()
+                line = inputfile.readline()
                 if not line:
-                    raise EOFError
+                    raise EOFError()
                 line = line.strip()
             if line.startswith("#") or line == "":
                 line = None
@@ -147,8 +157,8 @@ class Term(object):
     def __init__(self, name, arguments=None):
         if arguments == None:
             arguments = []
-        assert isinstance(name, str)
-        assert isinstance(arguments, list)
+        # assert isinstance(name, str)
+        # assert isinstance(arguments, list)
         self.name = name
         self.arguments = arguments
 
@@ -157,11 +167,11 @@ class Term(object):
         # Try to find a natural in here.
         try:
             if (self.name == 'Zero' or self.name == 'S') and _PRINTNUM:
-                return str(try_findnatterm(thing))
+                return str(try_findnatterm(self))
         except StopIteration:
             pass
         return self.name + ''.join("." +
-                                   ("%s" if arg.arguments == [] else "(%s)") % (str(arg),)
+                                   ("%s" if arg.arguments == [] else "(%s)") % (arg.__str__(),)
                                    for arg in self.arguments)
 
     def __repr__(self):
@@ -182,7 +192,8 @@ def readterm(f, onlyname=False):
     head = None
     # Special cases
     for keyword in _keywords:
-        if f.peekornone(len(keyword)) == keyword:
+        l = len(keyword)
+        if f.peekornone(l) == keyword:
             head = f.read(len(keyword))
             break
 
@@ -257,11 +268,11 @@ def readtermorrule(f):
 class Rule(object):
     __slots__ = ['lhs', 'rhs']
     def __init__(self, lhs, rhs):
-        assert isinstance(lhs, Term)
+        # assert isinstance(lhs, Term)
         # LHS must be flat
         assert all(var.arguments == [] for var in lhs.arguments)
         assert allunique([var.name for var in lhs.arguments])
-        assert isinstance(rhs, Term)
+        # assert isinstance(rhs, Term)
         self.lhs = lhs
         self.rhs = rhs
 
@@ -298,7 +309,7 @@ def dostuffwith(tag, thing, verbose, printout, printerr):
                 printout(("-> %s" if not _PRINTLATEXY else r"\rightarrow & \mathit{%s}\\") % (term,),
                          end=('\n' if not _PRINTLYX else ''))
             except ReductionFail as e:
-                printerr("Reduction failed to continue: " % (e,))
+                printerr("Reduction failed to continue: %s" % (e,))
                 return
         if _PRINTLYX: printout("(end)")
         printerr("Reduction complete." if not _PRINTLATEX else "\\\\")

@@ -1,0 +1,2 @@
+pyjs:
+	cd ../ && make pyjs
