@@ -47,7 +47,7 @@ class ReductionFail(Exception):
     __slots__ = ['message']
 
     def __init__(self, message):
-        assert(isinstance(message,str))
+        assert isinstance(message,str)
         self.message = message
 
     def __str__(self):
@@ -119,7 +119,7 @@ def runfile(verbose, printout, printerr):
                 continue
             file = buffer.BufferReader(io.StringIO(tounicode(line)))
             try:
-                thing = readtermorrule(file)
+                tag, thing = readtermorrule(file)
             except EOFError:
                 printerr("Premature end of line?")
                 line = None
@@ -134,12 +134,46 @@ def runfile(verbose, printout, printerr):
                 continue
             else:
                 line = ''
-            dostuffwith(thing, verbose, printout, printerr)
+            dostuffwith(tag, thing, verbose, printout, printerr)
     except EOFError:
         # import traceback
         # traceback.print_exc()
         if verbose:
             printerr("Quitting.")
+
+class Term(object):
+    __slots__ = ['name', 'arguments']
+
+    def __init__(self, name, arguments=None):
+        if arguments == None:
+            arguments = []
+        assert isinstance(name, str)
+        assert isinstance(arguments, list)
+        self.name = name
+        self.arguments = arguments
+
+    def __str__(self):
+        """Format a term for human inspection."""
+        # Try to find a natural in here.
+        try:
+            if (self.name == 'Zero' or self.name == 'S') and _PRINTNUM:
+                return str(try_findnatterm(thing))
+        except StopIteration:
+            pass
+        return self.name + ''.join("." +
+                                   ("%s" if arg.arguments == [] else "(%s)") % (str(arg),)
+                                   for arg in self.arguments)
+
+    def __repr__(self):
+        return "<Term %s>" % self
+
+def try_findnatterm(term):
+    if term.name == 'Zero' and len(term.arguments) == 0:
+        return 0
+    elif term.name == 'S' and len(term.arguments) == 1:
+        return 1 + try_findnatterm(term.arguments[0])
+    else:
+        raise StopIteration
 
 _keywords = r"\spadesuit \place \star".split(' ')
 
@@ -155,7 +189,7 @@ def readterm(f, onlyname=False):
     # Else, parse a normal variable or name. (This program doesn't distinguish.)
     if head == None:
         if not f.peek(1).isalnum() and f.peek(1) != '*':
-            raise ValueError("term does not start with alnum: {}".format(repr(f.peek(1))))
+            raise ValueError("term does not start with alnum: " % (repr(f.peek(1)),))
         head = f.read(1)
         char = f.peekornone(1) or ''
         while char.isalnum() or char in set("'_*{}"):
@@ -163,25 +197,20 @@ def readterm(f, onlyname=False):
             f.read(1)
             char = f.peekornone(1) or ''
 
-    if onlyname:
-        return head
-
-    # Read dots followed by more terms
-    restterms = []
-    while f.peekornone(1) == '.':
-        f.read(1)
-        if f.peek(1) == '(':
+    arguments = []
+    if not onlyname:
+        # Read dots followed by more terms
+        while f.peekornone(1) == '.':
             f.read(1)
-            restterms.append(readterm(f, False))
-            if f.read(1) != ')':
-                raise ValueError("no closing paren?")
-        else:
-            restterms.append(readterm(f, True))
+            if f.peek(1) == '(':
+                f.read(1)
+                arguments.append(readterm(f, False))
+                if f.read(1) != ')':
+                    raise ValueError("no closing paren?")
+            else:
+                arguments.append(readterm(f, True))
 
-    if restterms:
-        return [head] + restterms
-    else:
-        return head
+    return Term(head, arguments)
 
 def readtermorrule(f):
     f.skiplinespace()
@@ -199,17 +228,16 @@ def readtermorrule(f):
         f.read(3)
         # Read a rule
         lhs = readterm(f)
-        assert islhs(lhs)
         assert f.read(1) == "}"
         if f.peek(1) == "{":
             f.read(1)
             rhs = readterm(f)
             assert f.read(1) == "}"
         else:
-            rhs = f.read(1)
-            assert rhs.isalnum()
-
-        return makerule(lhs, rhs)
+            name = f.read(1)
+            assert name.isalnum()
+            rhs = Term(name)
+        return ('RULE', Rule(lhs, rhs))
     else:
         term = readterm(f)
         f.skiplinespace()
@@ -222,135 +250,84 @@ def readtermorrule(f):
             lhs = term
             f.skiplinespace()
             rhs = readterm(f)
-            return makerule(lhs, rhs)
+            return ('RULE', Rule(lhs, rhs))
         else:
-            return term
+            return ('TERM', term)
 
-def makerule(lhs, rhs):
-    if not allunique(listify(lhs)[1:]):
-        raise ValueError("repeated variable in lhs")
-    return ['RULE', lhs, rhs]
+class Rule(object):
+    __slots__ = ['lhs', 'rhs']
+    def __init__(self, lhs, rhs):
+        assert isinstance(lhs, Term)
+        # LHS must be flat
+        assert all(var.arguments == [] for var in lhs.arguments)
+        assert allunique([var.name for var in lhs.arguments])
+        assert isinstance(rhs, Term)
+        self.lhs = lhs
+        self.rhs = rhs
+
+    def __str__(self):
+        return "%s -> %s" % (self.lhs, self.rhs)
+    def __repr__(self):
+        return "<Rule %s>" % (self,)
 
 def allunique(l):
     return len(l) == len(set(l))
 
-def format_termorrule(thing):
-    """Serialize a thing or rule for human reading."""
-    if thing == 'Zero' and _PRINTNUM:
-        return '0'
-    if isinstance(thing, str):
-        return thing
-    else:
-        assert isinstance(thing, list) and list
-        if isrule(thing):
-            return "{} -> {}".format(format_termorrule(thing[1]), format_termorrule(thing[2]))
-        else:
-            try:
-                if _PRINTNUM: return str(try_findnatterm(thing))
-            except StopIteration:
-                pass
-            
-            return ".".join(formatted if '.' not in formatted
-                            else '({})'.format(formatted)
-                            for formatted in map(format_termorrule, thing))
+def dostuffwith(tag, thing, verbose, printout, printerr):
+    """Given a rule, install or overwrite it. Given a term, reduce it as far as possible.
 
-def try_findnatterm(thing):
-    # ugly!
-    if thing == 'Zero':
-        return 0
-    elif not isinstance(thing, list) or not len(thing) == 2 or thing[0] != 'S':
-        raise StopIteration
-    else:
-        return 1 + try_findnatterm(thing[1])
+    tag = 'RULE' or 'TERM'. Variable thing is then the rule or the term.
+    """
 
-def islhs(term):
-    return isinstance(term, list) and all(isinstance(part, str) for part in term)
-
-def isrule(thing):
-    if isinstance(thing, list) and thing[0] == 'RULE':
-        assert len(thing) == 3
-        return True
-    else:
-        return False
-
-def headof(thing):
-    """Can be given a LHS of a rule, or a term."""
-    if isinstance(thing, str):
-        return thing
-    else:
-        return thing[0]
-
-def dostuffwith(thing, verbose, printout, printerr):
-    """Given a rule, install or overwrite it. Given a term, reduce it as far as possible."""
-    if isrule(thing):
-        if headof(thing[1]) not in _defs:
+    if tag == 'RULE':
+        if thing.lhs.name not in _defs:
             if _PRINTVERBOSE: 
-                printerr("  Installing {}.".format(format_termorrule(thing)))
+                printerr("  Installing %s." % (thing,))
         else:
             if _PRINTVERBOSE: 
-                printerr("  Overwriting {}.".format(format_termorrule(thing)))
-        _defs[headof(thing[1])] = thing
+                printerr("  Overwriting %s." % (thing,))
+        _defs[thing.lhs.name] = thing
     else:
         term = thing
-        printout(("{}" if not _PRINTLATEXY else r" & \mathit{{{}}}\\")
-              .format(format_termorrule(term)),
-              end=('\n' if not _PRINTLYX else ''))
-        while headof(term) in _defs:
+        printout(("%s" if not _PRINTLATEXY else r" & \mathit{%s}\\") % (term,),
+                 end=('\n' if not _PRINTLYX else ''))
+        while term.name in _defs:
             # Rewrite this term
             try:
-                term = rewrite(term, _defs[headof(term)])
-                printout(("-> {}" if not _PRINTLATEXY else r"\rightarrow & \mathit{{{}}}\\")
-                      .format(format_termorrule(term)),
-                      end=('\n' if not _PRINTLYX else ''))
+                term = rewrite(term, _defs[term.name])
+                printout(("-> %s" if not _PRINTLATEXY else r"\rightarrow & \mathit{%s}\\") % (term,),
+                         end=('\n' if not _PRINTLYX else ''))
             except ReductionFail as e:
-                printerr("Reduction failed to continue: {}".format(e))
+                printerr("Reduction failed to continue: " % (e,))
                 return
         if _PRINTLYX: printout("(end)")
         printerr("Reduction complete." if not _PRINTLATEX else "\\\\")
 
-def listify(thing):
-    if isinstance(thing, list): return thing
-    else: return [thing]
-
-def unlistify(thing):
-    assert isinstance(thing, list)
-    if len(thing) == 1:
-        return thing[0]
-    else:
-        return thing
-
 def rewrite(term, rule):
     """Rewrite a term using a rule."""
-    RULE, lhs, rhs = rule
-    assert RULE == 'RULE'
-    del RULE
-    term = listify(term)
-    assert headof(term) == headof(lhs)
+    lhs = rule.lhs
+    rhs = rule.rhs
 
-    # Strip off the head.
-    term = term[1:]
-    lhs = lhs[1:]
+    assert term.name == lhs.name
 
     # Look up the variables.
-    arity = len(lhs)
-    length = len(term)
+    arity = len(lhs.arguments)
+    length = len(term.arguments)
     if length < arity:
-        raise ReductionFail("incomplete term ({}<{})".format(length, arity))
+        raise ReductionFail("incomplete term (%s<%s)" % (length, arity))
     if length > arity:
-        raise ReductionFail("invalid term ({}>{})".format(length, arity))
-    assert len(term) == len(lhs)
-    vars = dict(zip(lhs, term))
+        raise ReductionFail("invalid term (%s>%s)" % (length, arity))
+    assert len(term.arguments) == len(lhs.arguments)
+    vars = dict((lhsarg.name, subterm) for (lhsarg, subterm) in zip(lhs.arguments, term.arguments))
 
     # Substitute in the RHS
     def subst(subterm):
-        subterm = listify(subterm)
-        if subterm[0] in vars:
-            head = vars[subterm[0]]
+        if subterm.name in vars:
+            base = vars[subterm.name]
         else:
-            head = subterm[0]
-        result = listify(head) + [subst(subpart) for subpart in subterm[1:]]
-        return unlistify(result)
+            base = Term(subterm.name, [])
 
+        return Term(base.name, base.arguments + [subst(subpart) for subpart in subterm.arguments])
     return subst(rhs)
 
 if __name__ == '__main__':
