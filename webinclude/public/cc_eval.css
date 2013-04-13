@@ -18,7 +18,11 @@
     margin-top: 2.5em;
 }
 
-#output .meta < div {
+#output.meta {
     color: gray;
     font-style: italic;
+}
+
+#output > .terminated {
+	font-style: italic;
 }
