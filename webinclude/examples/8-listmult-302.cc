@@ -1,7 +1,6 @@
-# Run this program as follows:
-#
-#   python cc.py -printnum < fib.cc
-#
+# Title: List multiplication of [3, 0, 2]
+
+# Definitions
 
 ListMult.l.r -> A.l.r.(r.Zero)
 A.l.r.abort -> l.(r.(S.Zero)).(B.r.abort)
@@ -21,14 +20,5 @@ S.m.z.s -> s.m
 Nil.ifempty.iflist -> ifempty
 Cons.n.l.ifempty.iflist -> iflist.n.l
 
-# More efficient implementation:
-#
-# Mult.x.y.r -> Mult'.y.r.x
-# Mult'.y.r.x -> x.(r.Zero).(Mult'.y.(PostAdd.y.r))
-# PostAdd.y.r.x -> x.(r.y).(PostAdd.(S.y).r)
-
-# The trace of these terms will be printed. Term fr corresponds to the diamond
-# symbol in the paper.
-
+# Reduce these terms
 ListMult.(Cons.(S.(S.(S.Zero))).(Cons.Zero.(Cons.(S.(S.Zero)).Nil))).fr
-# ListMult.(Cons.(S.(S.(S.Zero))).(Cons.(S.Zero).(Cons.(S.(S.Zero)).Nil))).fr

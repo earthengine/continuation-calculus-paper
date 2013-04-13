@@ -41,6 +41,7 @@ def loadFile(sender):
     contents = files[currentFileIndex][1]
     inputArea.setText(contents)
     inputArea.setVisibleLines(max(10, len(splitlines(contents))))
+    showOutputMeta("Press Reduce to see output here.")
     pass
 
 def newlinesLabel(text, nlHTML="<br>"):
@@ -143,7 +144,7 @@ if __name__ == '__main__':
     inputArea = TextArea(VisibleLines=5, CharacterWidth=80)
     RootPanel("input").add(inputArea)
     outputPanel = RootPanel("output")
+    loadFile('called from main')
     showOutputMeta("Output will appear here. It takes a few seconds to calculate a long reduction.")
     outputPanel.add(HTML("<p>Created with <a href='http://pyjs.org/'>pyjs</a>.</p>"))
-    loadFile('called from main')
     b.setFocus(True)
