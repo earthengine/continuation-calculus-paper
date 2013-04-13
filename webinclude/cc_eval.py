@@ -10,46 +10,18 @@ from pyjamas.ui.TextArea import TextArea
 from pyjamas.ui.FlowPanel import FlowPanel
 from pyjamas import Window, DOM
 
-import cc, io, functools
+import cc, examples, io, functools
 cc._PRINTNUM = True
 
 ncustomfiles = 0
 
-FIBCC = """
-Zero.z.s -> z
-S.m.z.s -> s.m
-Nil.ifempty.iflist -> ifempty
-Cons.n.l.ifempty.iflist -> iflist.n.l
-
-# Call-by-value
-
-AddCBV.x.y.r -> x.(r.y).(AddCBV'.y.r)
-AddCBV'.y.r.x -> AddCBV.x.(S.y).r
-
-FibCBV.x.r -> x.(r.Zero).(FibCBV_1.r)
-FibCBV_1.r.y -> y.(r.(S.Zero)).(FibCBV_2.r.y)
-FibCBV_2.r.y.y' -> FibCBV.y.(FibCBV_3.r.y')
-FibCBV_3.r.y'.fib_{y} -> FibCBV.y'.(FibCBV_4.r.fib_{y})
-FibCBV_4.r.fib_{y}.fib_{y'} -> AddCBV.fib_{y}.fib_{y'}.r
-
-# Call-by-name
-
-AddCBN.x.y.z.s -> x.(y.z.s).(AddCBN'.y.s)
-AddCBN'.y.s.x' -> s.(AddCBN.x'.y)
-
-FibCBN.x.z.s -> x.z.(FibCBN_1.z.s)
-FibCBN_1.z.s.y -> y.(s.Zero).(FibCBN_2.z.s.y)
-FibCBN_2.z.s.y.y' -> AddCBN.(FibCBN.y).(FibCBN.y').z.s
-
-# To see fib(5) = 5:
-FibCBV.(S.(S.(S.(S.(S.Zero))))).fr
-""".strip()
-
-
-files = [("First Example", FIBCC)]
+files = examples.predefined_files
 
 inputArea = None
 outputPanel = None
+fileChooser = None
+
+currentFileIndex = None
 
 def splitlines(s):
     return s.split("\n")
@@ -63,9 +35,12 @@ def makeFileChooser():
     return l
 
 def loadFile(sender):
-    contents = files[0][1]
+    currentFileIndex = fileChooser.getSelectedIndex()
+    assert currentFileIndex >= 0
+
+    contents = files[currentFileIndex][1]
     inputArea.setText(contents)
-    inputArea.setVisibleLines(len(splitlines(contents)))
+    inputArea.setVisibleLines(max(10, len(splitlines(contents))))
     pass
 
 def newlinesLabel(text, nlHTML="<br>"):
@@ -131,8 +106,8 @@ def reduce(sender=None, maxlines=300):
                    printout=catchoutput, printerr=catchoutput)
     except OverlongOutput:
         extra = FlowPanel(StyleName="terminated")
-        extra.add(InlineLabel("Reduction terminated after %s lines." % (maxlines,)))
-        extra.add(Button("Try with more time.", functools.partial(reduce, maxlines=nextmaxlines(maxlines))))
+        extra.add(InlineLabel("Reduction terminated after %s lines. " % (maxlines,)))
+        extra.add(Button("Try longer", functools.partial(reduce, maxlines=nextmaxlines(maxlines))))
         showOutput(output, extra=extra)
     except Exception, e:
         Window.alert(e)
@@ -162,11 +137,13 @@ def nextmaxlines(prevmaxlines):
 if __name__ == '__main__':
     b = Button("Reduce", reduce)
     RootPanel("buttons").add(b)
-    RootPanel("file-chooser").add(makeFileChooser())
+    fileChooser = makeFileChooser()
+    RootPanel("file-chooser").add(fileChooser)
     RootPanel("loading-notify").setVisible(False)
     inputArea = TextArea(VisibleLines=5, CharacterWidth=80)
     RootPanel("input").add(inputArea)
     outputPanel = RootPanel("output")
     showOutputMeta("Output will appear here. It takes a few seconds to calculate a long reduction.")
+    outputPanel.add(HTML("<p>Created with <a href='http://pyjs.org/'>pyjs</a>.</p>"))
     loadFile('called from main')
     b.setFocus(True)

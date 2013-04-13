@@ -12,3 +12,4 @@ buffer.js
 cc.js
 webinclude/cc_eval.js
 webinclude/io.js
+webinclude/examples.py
