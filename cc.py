@@ -312,7 +312,7 @@ def dostuffwith(tag, thing, verbose, printout, printerr):
                 printerr("Reduction failed to continue: %s" % (e,))
                 return
         if _PRINTLYX: printout("(end)")
-        printerr("Reduction complete." if not _PRINTLATEX else "\\\\")
+        printerr("Reduction finished." if not _PRINTLATEX else "\\\\")
 
 def rewrite(term, rule):
     """Rewrite a term using a rule."""

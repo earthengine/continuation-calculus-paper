@@ -8,6 +8,7 @@ from pyjamas.ui.Label import Label
 from pyjamas.ui.ListBox import ListBox
 from pyjamas.ui.TextArea import TextArea
 from pyjamas.ui.FlowPanel import FlowPanel
+from pyjamas.ui.DisclosurePanel import DisclosurePanel
 from pyjamas import Window, DOM
 
 import cc, examples, io, functools
@@ -44,32 +45,107 @@ def loadFile(sender):
     showOutputMeta("Press Reduce to see output here.")
     pass
 
-def newlinesLabel(text, nlHTML="<br>"):
-    """Make a FlowPanel with the specified text; broken up on newlines."""
-    fp = FlowPanel()
-    lines = splitlines(text)
-    if lines == []: return fp
-    fp.add(InlineLabel(lines[0]))
-    for line in lines[1:]:
-        fp.add(InlineHTML(nlHTML))
-        fp.add(InlineLabel(line))
-    return fp
-
 def showOutputMeta(text):
     """Clear outputPanel and show information in it."""
     outputPanel.clear()
     outputPanel.add(Label(text))
     outputPanel.setStyleName("meta")
 
-def showOutput(output, extra=None):
+def showOutput(output, extra=None, nlHTML="<br>"):
     """Clear outputPanel and show newline-separated output in it.
+
+    The following types of lines will be parsed differently:
+
+    - A sequence of "-> term", "-> term" will get a DisclosurePanel.
+    - Definitions will be collapsed in a DisclosurePanel.
 
     If extra is set, then append that widget."""
 
-    output = output.strip()
-    if output:
+    lines = splitlines(output.strip())
+    if lines:
         outputPanel.clear()
-        outputPanel.add(newlinesLabel(output))
+        fp = FlowPanel()
+        outputPanel.add(fp)
+
+        # Add content to the FlowPanel
+
+        # We distinguish a number of line groups:
+        # 
+        # 0: no special handling.
+        # 1: definition group
+        # 2: reduction group
+
+        curgroup = 0
+        curgroupwidgets = []
+        curgrouphead = None
+        RARROW=chr(0x2192)
+        def fixarrow(line):
+            return line
+        def addline(line):
+            global curgroup, curgroupwidgets, curgrouphead, fp
+            line = line.strip()
+            line = line.replace("->", RARROW)
+            if line.startswith("Installing "):
+                # New group: 1
+                if curgroup != 1: finishgroup()
+                curgroup = 1
+                curgroupwidgets.append(Label(line))
+            elif line.startswith(RARROW):
+                # New group: 2.
+                if curgroup == 0:
+                    # The last line is still stored in curgroupwidgets. We use
+                    # it as the DisclosurePanel head.
+                    assert curgrouphead == None
+                    if curgroupwidgets == []:
+                        curgrouphead = "unknown reduction"
+                    else:
+                        assert len(curgroupwidgets) == 1
+                        curgrouphead = curgroupwidgets[0].getText()
+                        curgroupwidgets = []
+                elif curgroup != 2:
+                    finishgroup()
+                curgroup = 2
+                curgroupwidgets.append(Label(line))
+                # Window.alert(curgroupwidgets)
+            else:
+                # New group: 0
+                finishgroup()
+                curgroup = 0
+                curgroupwidgets = [Label(line)]
+        def finishgroup():
+            global curgroup, curgroupwidgets, curgrouphead, fp
+            if curgroup == 0:
+                for widget in curgroupwidgets:
+                    fp.add(widget)
+            elif curgroup == 1:
+                dp = DisclosurePanel("Definitions")
+                dpflow = FlowPanel()
+                dp.add(dpflow)
+                for widget in curgroupwidgets:
+                    dpflow.add(widget)
+                fp.add(dp)
+            elif curgroup == 2:
+                curgrouphead += " (%s steps)" % (len(curgroupwidgets),)
+                dp = DisclosurePanel(curgrouphead)
+                dpflow = FlowPanel()
+                dp.add(dpflow)
+                for widget in curgroupwidgets[:-1]:
+                    dpflow.add(widget)
+                fp.add(dp)
+                fp.add(curgroupwidgets[-1])
+            curgroup = 0
+            curgroupwidgets = []
+            curgrouphead = None
+
+        for line in lines:
+            addline(line)
+        finishgroup()
+
+        # fp.add(InlineLabel(lines[0]))
+        # for line in lines[1:]:
+        #     fp.add(InlineHTML(nlHTML))
+        #     fp.add(InlineLabel(line))
+
         if extra != None:
             outputPanel.add(extra)
         # outputPanel.add(Label(output))
@@ -103,7 +179,7 @@ def reduce(sender=None, maxlines=300):
 
     cc._defs = dict()
     try:
-        cc.runfile(inputfile=io.StringIO(input), verbose=True,
+        cc.runfile(inputfile=io.StringIO(input), verbose=False,
                    printout=catchoutput, printerr=catchoutput)
     except OverlongOutput:
         extra = FlowPanel(StyleName="terminated")
