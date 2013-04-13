@@ -4,7 +4,7 @@ There are two ways you can try continuation calculus for yourself: a web interfa
 
 ## Web interface ##
 
-Go to http://bgeron.nl/cc-paper/ to try it yourself. The webinterface works fine, but is slower and has slightly less features.
+Go to [http://bgeron.nl/cc-paper/](http://bgeron.nl/cc-paper/) to try it yourself. The webinterface works fine, but is slower and has slightly less features.
 
 ## Python script ##
 
