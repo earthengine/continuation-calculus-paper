@@ -9,9 +9,13 @@ pyjsbuild = $(pyjsbuildroot)/bin/pyjsbuild
 # Flags
 targetfile = $(target).nocache.html
 pyjsopts = -I webinclude -o $(outputdir) --no-compile-inplace
-pyjsopts += -c --strict
+
+# Use this for developing
+# pyjsopts += -c --strict
 # pyjsopts += -d
-# pyjsopts += -c -O
+
+# Use this for the public interface
+pyjsopts += -c -O
 
 pyjs: $(outputdir)/$(targetfile)
 
