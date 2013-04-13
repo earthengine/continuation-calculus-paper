@@ -9,6 +9,7 @@ from pyjamas.ui.ListBox import ListBox
 from pyjamas.ui.TextArea import TextArea
 from pyjamas.ui.FlowPanel import FlowPanel
 from pyjamas.ui.DisclosurePanel import DisclosurePanel
+from pyjamas.Timer import Timer
 from pyjamas import Window, DOM
 
 import cc, examples, io, functools
@@ -158,15 +159,20 @@ class OverlongOutput(Exception):
     reduction computation."""
     pass
 
-def reduce(sender=None, maxlines=300):
+def queuereduce(sender, maxlines=300):
+    showOutputMeta("Reducing...")
+
+    # Schedule reduceterm(maxlines) really soon.
+    timer = Timer(notify=functools.partial(reduceterm, maxlines=maxlines))
+    timer.schedule(50) # after 50 milliseconds
+
+def reduceterm(sender, maxlines):
     """When the Reduce button is pressed: call cc.runfile with our input.
 
     There is a maximum number of lines that we will output, to prevent a
     stalling browser and an overfull document. The user can raise this limit
     with a link.
     """
-
-    showOutputMeta("Reducing...")
 
     input = inputArea.getText()
     output = ""
@@ -184,7 +190,7 @@ def reduce(sender=None, maxlines=300):
     except OverlongOutput:
         extra = FlowPanel(StyleName="terminated")
         extra.add(InlineLabel("Reduction terminated after %s lines. " % (maxlines,)))
-        extra.add(Button("Try longer", functools.partial(reduce, maxlines=nextmaxlines(maxlines))))
+        extra.add(Button("Try longer", functools.partial(queuereduce, maxlines=nextmaxlines(maxlines))))
         showOutput(output, extra=extra)
     except Exception, e:
         Window.alert(e)
@@ -196,7 +202,7 @@ def nextmaxlines(prevmaxlines):
     a number in that sequence, return the next number.
 
     This function is used to make buttons for allowing more computation time,
-    step by step, in reduce().    
+    step by step, in reduceterm().    
     """
 
     orders = 0
@@ -212,7 +218,7 @@ def nextmaxlines(prevmaxlines):
     return maxlines
 
 if __name__ == '__main__':
-    b = Button("Reduce", reduce)
+    b = Button("Reduce", queuereduce)
     RootPanel("buttons").add(b)
     fileChooser = makeFileChooser()
     RootPanel("file-chooser").add(fileChooser)
