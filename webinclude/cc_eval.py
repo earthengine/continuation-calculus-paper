@@ -11,6 +11,7 @@ from pyjamas.ui.FlowPanel import FlowPanel
 from pyjamas import Window, DOM
 
 import cc, io
+cc._PRINTNUM = True
 
 ncustomfiles = 0
 
@@ -40,8 +41,8 @@ FibCBN.x.z.s -> x.z.(FibCBN_1.z.s)
 FibCBN_1.z.s.y -> y.(s.Zero).(FibCBN_2.z.s.y)
 FibCBN_2.z.s.y.y' -> AddCBN.(FibCBN.y).(FibCBN.y').z.s
 
-# To see fib(7) = 13:
-FibCBV.(S.(S.(S.(S.(S.(S.(S.Zero))))))).fr
+# To see fib(6) = 8:
+FibCBV.(S.(S.(S.(S.(S.(S.Zero)))))).fr
 """.strip()
 
 
@@ -120,6 +121,6 @@ if __name__ == '__main__':
     inputArea = TextArea(VisibleLines=5, CharacterWidth=80)
     RootPanel("input").add(inputArea)
     outputPanel = RootPanel("output")
-    showOutputMeta("Output will appear here.")
+    showOutputMeta("Output will appear here. It takes a few seconds to calculate a long reduction.")
     loadFile('called from main')
     b.setFocus(True)

@@ -18,7 +18,7 @@
     margin-top: 2.5em;
 }
 
-#output > .meta {
+#output .meta < div {
     color: gray;
     font-style: italic;
 }

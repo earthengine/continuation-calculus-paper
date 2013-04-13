@@ -4,6 +4,13 @@ import sys, buffer, io, os
 
 _defs = dict() # stores rules
 
+# defaults to be overridden in main()
+_PRINTNUM = False # convert (S.(S.Zero)) to 2?
+_PRINTLATEX = False # whether to output pure latex
+_PRINTLYX = False # whether to output for LyX math array mode
+_PRINTLATEXY = False # = printlatex or printlyx
+_PRINTVERBOSE = True # = not printlatexy
+
 # Some methods to make everything Python 2 compatible.
 
 if isinstance(range(0), list):
@@ -61,13 +68,6 @@ class ReductionFail(Exception):
 
     def __str__(self):
         return self.message
-
-# defaults to be overridden in main()
-_PRINTNUM = False # convert (S.(S.Zero)) to 2?
-_PRINTLATEX = False # whether to output pure latex
-_PRINTLYX = False # whether to output for LyX math array mode
-_PRINTLATEXY = False # = printlatex or printlyx
-_PRINTVERBOSE = True # = not printlatexy
 
 def main():
     global _PRINTLATEX, _PRINTLYX, _PRINTNUM, _PRINTLATEXY, _PRINTVERBOSE
@@ -167,7 +167,7 @@ class Term(object):
         # Try to find a natural in here.
         try:
             if (self.name == 'Zero' or self.name == 'S') and _PRINTNUM:
-                return str(try_findnatterm(self))
+                return "%s" % (try_findnatterm(self),)
         except StopIteration:
             pass
         return self.name + ''.join("." +
