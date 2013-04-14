@@ -170,12 +170,19 @@ class Term(object):
                 return "%s" % (try_findnatterm(self),)
         except StopIteration:
             pass
-        return self.name + ''.join("." +
-                                   ("%s" if arg.arguments == [] else "(%s)") % (arg.__str__(),)
+        return self.name + ''.join("." + strandwrapifneeded(arg)
                                    for arg in self.arguments)
 
     def __repr__(self):
         return "<Term %s>" % self
+
+def strandwrapifneeded(obj):
+    """
+    Return str(obj), and enclose in parentheses if there is a dot inside the
+    returned string.
+    """
+    s = "%s" % (obj,)
+    return "("+s+")" if '.' in s else s
 
 def try_findnatterm(term):
     if term.name == 'Zero' and len(term.arguments) == 0:
