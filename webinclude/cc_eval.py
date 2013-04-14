@@ -9,12 +9,28 @@ from pyjamas.ui.ListBox import ListBox
 from pyjamas.ui.TextArea import TextArea
 from pyjamas.ui.FlowPanel import FlowPanel
 from pyjamas.ui.DisclosurePanel import DisclosurePanel
+from pyjamas.ui.VerticalPanel import VerticalPanel
 from pyjamas.Timer import Timer
 from pyjamas import Window, DOM
 
 import cc, examples, io, functools
 cc._PRINTNUM = True
 
+BEGINMESSAGES = [HTML(s.strip()) for s in [
+"""
+<p>Output will appear here. It takes a few seconds to calculate a long
+reduction.</p>
+""", """
+<p>This script evaluates continuation calculus or CC, a variant of lambda
+calculus. A submitted paper by Bram Geron and <a
+href="http://www.cs.ru.nl/~herman/">Herman Geuvers</a> argues that CC is a
+suitable formalism for modeling programs with control, and for
+mixing call-by-value and call-by-name code.</p>
+""", """
+<p>Created with <a href='http://pyjs.org/'>pyjs</a>.</p>
+"""]]
+
+# not functional yet
 ncustomfiles = 0
 
 files = examples.predefined_files
@@ -46,10 +62,14 @@ def loadFile(sender):
     showOutputMeta("Press Reduce to see output here.")
     pass
 
-def showOutputMeta(text):
+def showOutputMeta(message, iswidgetlist=False):
     """Clear outputPanel and show information in it."""
     outputPanel.clear()
-    outputPanel.add(Label(text))
+    if iswidgetlist:
+        for m in message:
+            outputPanel.add(m)
+    else:
+        outputPanel.add(Label(message))
     outputPanel.setStyleName("meta")
 
 def showOutput(output, extra=None, nlHTML="<br>"):
@@ -162,6 +182,13 @@ class OverlongOutput(Exception):
 def queuereduce(sender, maxlines=300):
     showOutputMeta("Reducing...")
 
+    outputPanel.add(HTML("&nbsp;"))
+    outputPanel.add(HTML("&nbsp;"))
+    outputPanel.add(HTML("""
+    <p>Takes too long? Try the <a href="https://bitbucket.org/bgeron
+    </continuation-calculus-paper/">Python evaluator.</a>.</p>
+    """.strip()))
+
     # Schedule reduceterm(maxlines) really soon.
     timer = Timer(notify=functools.partial(reduceterm, maxlines=maxlines))
     timer.schedule(50) # after 50 milliseconds
@@ -227,6 +254,5 @@ if __name__ == '__main__':
     RootPanel("input").add(inputArea)
     outputPanel = RootPanel("output")
     loadFile('called from main')
-    showOutputMeta("Output will appear here. It takes a few seconds to calculate a long reduction.")
-    outputPanel.add(HTML("<p>Created with <a href='http://pyjs.org/'>pyjs</a>.</p>"))
+    showOutputMeta(BEGINMESSAGES, iswidgetlist=True)
     b.setFocus(True)

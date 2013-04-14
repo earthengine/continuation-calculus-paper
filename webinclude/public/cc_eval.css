@@ -10,7 +10,7 @@
     color: gray;
 }
 
-#input > textarea {
+#input textarea {
     margin-top: 1em;
 }
 
@@ -18,11 +18,11 @@
     margin-top: 2.5em;
 }
 
-#output.meta {
+#output.meta * {
     color: gray;
     font-style: italic;
 }
 
-#output > .terminated {
+#output .terminated {
 	font-style: italic;
 }

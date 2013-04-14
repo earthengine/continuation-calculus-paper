@@ -1,4 +1,4 @@
-# Title: Call-by-name fib(8)
+# Title: Call-by-name fib(5), plus 0
 
 # Definitions
 
@@ -27,5 +27,5 @@ FibCBN.x.z.s -> x.z.(FibCBN_1.z.s)
 FibCBN_1.z.s.y -> y.(s.Zero).(FibCBN_2.z.s.y)
 FibCBN_2.z.s.y.y' -> AddCBN.(FibCBN.y).(FibCBN.y').z.s
 
-# To see fib(8) = 21, run this. This takes 514 steps.
-AddCBV.(FibCBN.(S.(S.(S.(S.(S.(S.(S.(S.Zero))))))))).Zero.fr
+# To see fib(5) = 5, run this. This takes 104 steps.
+AddCBV.(FibCBN.(S.(S.(S.(S.(S.Zero)))))).Zero.fr
