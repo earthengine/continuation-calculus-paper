@@ -15,8 +15,8 @@ AddCBV'.y.r.x -> AddCBV.x.(S.y).r
 FibCBV.x.r -> x.(r.Zero).(FibCBV_1.r)
 FibCBV_1.r.y -> y.(r.(S.Zero)).(FibCBV_2.r.y)
 FibCBV_2.r.y.y' -> FibCBV.y.(FibCBV_3.r.y')
-FibCBV_3.r.y'.fib_{y} -> FibCBV.y'.(FibCBV_4.r.fib_{y})
-FibCBV_4.r.fib_{y}.fib_{y'} -> AddCBV.fib_{y}.fib_{y'}.r
+FibCBV_3.r.y'.fib_y -> FibCBV.y'.(FibCBV_4.r.fib_y)
+FibCBV_4.r.fib_y.fib_y' -> AddCBV.fib_y.fib_y'.r
 
 # Definitions for call-by-name
 
