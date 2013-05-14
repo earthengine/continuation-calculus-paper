@@ -179,7 +179,7 @@ class OverlongOutput(Exception):
     reduction computation."""
     pass
 
-def queuereduce(sender, maxlines=300):
+def queuereduce(sender, maxlines=1000):
     showOutputMeta("Reducing...")
 
     outputPanel.add(HTML("&nbsp;"))
