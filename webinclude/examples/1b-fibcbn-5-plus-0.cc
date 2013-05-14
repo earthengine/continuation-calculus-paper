@@ -3,9 +3,9 @@
 # Definitions
 
 Zero.z.s -> z
-S.m.z.s -> s.m
-Nil.ifempty.iflist -> ifempty
-Cons.n.l.ifempty.iflist -> iflist.n.l
+S.x.z.s -> s.x
+Nil.e.c -> e
+Cons.x.xs.e.c -> c.x.xs
 
 # Definitions for call-by-value
 
