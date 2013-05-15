@@ -1,4 +1,4 @@
-# Title: List multiplication of [3, 0, 2]
+# Title: List multiplication of [3, 0, 2] vs. [3, 1, 2]
 
 # Definitions
 
@@ -18,5 +18,7 @@ S.x.z.s -> s.x
 Nil.e.c -> e
 Cons.x.xs.e.c -> c.x.xs
 
-# Reduce these terms
+# Calculating the product of [3, 0, 2] takes 10 steps
 ListMult.(Cons.(S.(S.(S.Zero))).(Cons.Zero.(Cons.(S.(S.Zero)).Nil))).fr
+# Calculating the product of [3, 1, 2] takes 87 steps
+ListMult.(Cons.(S.(S.(S.Zero))).(Cons.(S.Zero).(Cons.(S.(S.Zero)).Nil))).fr
