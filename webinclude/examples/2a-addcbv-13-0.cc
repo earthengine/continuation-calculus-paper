@@ -1,11 +1,9 @@
 # Title: Call-by-value 13 + 0
 
-# Definitions
+# Encoding of data
 
 Zero.z.s -> z
 S.x.z.s -> s.x
-Nil.e.c -> e
-Cons.x.xs.e.c -> c.x.xs
 
 AddCBV.x.y.r -> x.(r.y).(AddCBV'.y.r)
 AddCBV'.y.r.x -> AddCBV.x.(S.y).r

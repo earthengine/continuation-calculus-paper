@@ -1,11 +1,9 @@
 # Title: Test whether fib(8) == 0: CBN faster than CBV
 
-# Definitions
+# Encoding of data
 
 Zero.z.s -> z
 S.x.z.s -> s.x
-Nil.e.c -> e
-Cons.x.xs.e.c -> c.x.xs
 
 # Definitions for call-by-value
 
