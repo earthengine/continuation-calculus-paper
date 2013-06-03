@@ -8,7 +8,7 @@ S.x.z.s -> s.x
 # Definitions for call-by-value
 
 AddCBV.x.y.r -> x.(r.y).(AddCBV'.y.r)
-AddCBV'.y.r.x -> AddCBV.x.(S.y).r
+AddCBV'.y.r.x' -> AddCBV.x'.(S.y).r
 
 FibCBV.x.r -> x.(r.Zero).(FibCBV_1.r)
 FibCBV_1.r.y -> y.(r.(S.Zero)).(FibCBV_2.r.y)

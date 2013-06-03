@@ -11,7 +11,7 @@ Mult.x.y.r -> y.(r.Zero).(PostMult.x.(PostAdd.x.r))
 PostAdd.x.r.y -> AddCBV.x.y.r
 
 AddCBV.x.y.r -> x.(r.y).(AddCBV'.y.r)
-AddCBV'.y.r.x -> AddCBV.x.(S.y).r
+AddCBV'.y.r.x' -> AddCBV.x'.(S.y).r
 
 Zero.z.s -> z
 S.x.z.s -> s.x
