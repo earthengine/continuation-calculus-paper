@@ -2,8 +2,8 @@
 
 # Definitions
 
-ListMult.l.r -> A.l.r.(r.Zero)
-A.l.r.abort -> l.(r.(S.Zero)).(B.r.abort)
+ListMult.xs.r -> A.xs.r.(r.Zero)
+A.xs.r.abort -> xs.(r.(S.Zero)).(B.r.abort)
 B.r.abort.x.xs -> x.abort.(C.r.abort.x.xs)
 C.r.abort.x.xs.x' -> A.xs.(PostMult.x.r).abort
 PostMult.x.r.y -> Mult.x.y.r
