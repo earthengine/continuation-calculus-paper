@@ -22,7 +22,7 @@ You can also enter interactive mode:
 
 Now you can enter definitions and terms. Definitions will be remembered, terms will be evaluated to a final term.
 
-For the syntax of terms and rules, look in fib.cc en listmult.cc. Terms and definitions must be on single lines, with no surrounding whitespace. A hash symbol starts a comment line.
+For the syntax of terms and rules, look in fib.cc and listmult.cc. Terms and definitions must be on single lines, with no surrounding whitespace. A hash symbol starts a comment line.
 
 Options:
 
